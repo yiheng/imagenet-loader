@@ -7,12 +7,16 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Read imageNet data structure
  */
 public class DataSet {
-    private List<Image> imageList = new ArrayList<Image>();
+    private ConcurrentLinkedQueue<Image> imageList = new ConcurrentLinkedQueue<Image>();
 
     public DataSet(String pathName) throws IOException {
         Path path = Paths.get(pathName);
@@ -27,5 +31,9 @@ public class DataSet {
             }
         }
         System.out.println("Done");
+    }
+
+    public Optional<Image> fetch() {
+        return Optional.ofNullable(imageList.poll());
     }
 }

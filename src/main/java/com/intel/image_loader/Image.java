@@ -1,8 +1,14 @@
 package com.intel.image_loader;
 
-import java.io.File;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Optional;
 
 enum ImageType {
     JPEG
@@ -33,7 +39,16 @@ public class Image {
         }
     }
 
-    public Image(String path) {
-        this(Paths.get(path));
+    public Optional<BufferedImage> load() {
+        try {
+            FileInputStream fis = new FileInputStream(path.toString());
+            FileChannel channel = fis.getChannel();
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            channel.transferTo(0, channel.size(), Channels.newChannel(byteArrayOutputStream));
+            return Optional.of(ImageIO.read(new ByteArrayInputStream(byteArrayOutputStream.toByteArray())));
+        } catch (Exception ex) {
+            System.err.println("Can't read file " + fileName);
+            return Optional.empty();
+        }
     }
 }
