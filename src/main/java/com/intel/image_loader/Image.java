@@ -9,6 +9,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.Optional;
+import static com.intel.image_loader.Utils.*;
 
 enum ImageType {
     JPEG
@@ -27,15 +28,15 @@ public class Image {
         this.path = path;
         this.fileName = this.path.getFileName().toString();
         String[] tokens = this.fileName.split("_");
-        assert(tokens.length == 2);
+        requires(tokens.length == 2);
         this.label = tokens[0];
-        assert(this.label == this.path.getParent().getFileName().toString());
+        requires(this.label.equals(this.path.getParent().getFileName().toString()));
         String[] nameAndType = this.fileName.split("\\.");
-        assert(nameAndType.length == 2);
-        if (nameAndType[2].equals("JPEG")) {
+        requires(nameAndType.length == 2);
+        if (nameAndType[1].equals("JPEG")) {
             type = ImageType.JPEG;
         } else {
-            throw new RuntimeException("Unsupported image type");
+            throw new RuntimeException("Unsupported image type " + nameAndType[1]);
         }
     }
 
