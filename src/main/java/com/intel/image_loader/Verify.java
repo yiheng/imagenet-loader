@@ -15,12 +15,13 @@ import static com.intel.image_loader.Utils.*;
 
 public class Verify {
     public static void main(String[] args) throws IOException {
-        requires(args.length == 1, "Invalid arguments length");
+        requires(args.length == 2, "Invalid arguments length");
         String file = args[0];
-        verify(file);
+        String target = args[1];
+        verify(file, target);
     }
 
-    private static void verify(String uri) throws IOException {
+    private static void verify(String uri, String target) throws IOException {
         System.setProperty("hadoop.home.dir", "/");
         Path path = new Path(uri);
         Configuration conf = new Configuration();
@@ -29,11 +30,20 @@ public class Verify {
         SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
         Writable key = (Writable)
                 ReflectionUtils.newInstance(reader.getKeyClass(), conf);
-        Writable value = new ArrayWritable(DoubleWritable.class);
+        ArrayWritable value = new ArrayWritable(DoubleWritable.class);
         long position = reader.getPosition();
         while (reader.next(key, value)) {
             String syncSeen = reader.syncSeen() ? "*" : "";
-            System.out.printf("[%s%s]\t%s\t%s\n", position, syncSeen, key, value);
+            Writable[] array = value.get();
+            double[] data = new double[array.length];
+            for(int i = 0; i < array.length; i++) {
+                data[i] = ((DoubleWritable)array[i]).get();
+            }
+            System.out.printf("[%s%s]\t%s\t Array with length(%s)\n", position, syncSeen, key, data.length);
+            if(key.toString().equals(target)) {
+                System.out.println("Extact " + target + " to " + target + ".jpeg");
+                Image.extract(data, target + ".jpeg");
+            }
             position = reader.getPosition(); // beginning of next record
         }
     }

@@ -5,11 +5,14 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.*;
 import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.zookeeper.KeeperException;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.io.IOException;
 import java.net.URI;
+
+import static com.intel.image_loader.Utils.*;
 
 /**
  * Write image data into sequence file
@@ -24,6 +27,8 @@ public class Writer {
 
     private final SequenceFile.Writer writer;
 
+    private DoubleWritable[] buffer = null;
+
     private final ArrayWritable value = new ArrayWritable(DoubleWritable.class);
 
     public Writer(String uri) throws IOException {
@@ -34,13 +39,23 @@ public class Writer {
                 SequenceFile.Writer.keyClass(Text.class),
                 SequenceFile.Writer.valueClass(ArrayWritable.class)
         );
-
-        path = null;
     }
 
-    public void write(String fileName, String label, BufferedImage img) throws Exception {
+    public void write(String fileName, double[] img) throws Exception {
+        if(buffer == null) {
+            buffer = new DoubleWritable[img.length];
+            for(int i = 0; i < img.length ; i++) {
+                buffer[i] = new DoubleWritable();
+            }
+            value.set(buffer);
+        }
+
+        requires(buffer.length == img.length);
+        for(int i = 0; i < img.length; i++) {
+            buffer[i].set(img[i]);
+        }
+
         try {
-            value.set(convertTo2D(img));
             writer.append(new Text(fileName), value);
         } catch (Exception e) {
             e.printStackTrace();
@@ -53,50 +68,5 @@ public class Writer {
             writer.close();
         } catch (IOException e) {
         }
-    }
-
-    private static DoubleWritable[] convertTo2D(BufferedImage image) {
-
-        final byte[] pixels = ((DataBufferByte) image.getRaster().getDataBuffer()).getData();
-        final int width = image.getWidth();
-        final int height = image.getHeight();
-        final boolean hasAlphaChannel = image.getAlphaRaster() != null;
-
-        DoubleWritable[] result = null;
-        if (hasAlphaChannel) {
-            result =  new DoubleWritable[pixels.length / 4];
-            final int pixelLength = 4;
-            for (int pixel = 0, row = 0, col = 0; pixel < pixels.length; pixel += pixelLength) {
-                int argb = 0;
-                argb += (((int) pixels[pixel] & 0xff) << 24); // alpha
-                argb += ((int) pixels[pixel + 1] & 0xff); // blue
-                argb += (((int) pixels[pixel + 2] & 0xff) << 8); // green
-                argb += (((int) pixels[pixel + 3] & 0xff) << 16); // red
-                result[row * width + col] = new DoubleWritable(argb);
-                col++;
-                if (col == width) {
-                    col = 0;
-                    row++;
-                }
-            }
-        } else {
-            result =  new DoubleWritable[pixels.length / 3];
-            final int pixelLength = 3;
-            for (int pixel = 0, row = 0, col = 0; pixel < pixels.length; pixel += pixelLength) {
-                int argb = 0;
-                argb += -16777216; // 255 alpha
-                argb += ((int) pixels[pixel] & 0xff); // blue
-                argb += (((int) pixels[pixel + 1] & 0xff) << 8); // green
-                argb += (((int) pixels[pixel + 2] & 0xff) << 16); // red
-                result[row * width + col] = new DoubleWritable(argb);
-                col++;
-                if (col == width) {
-                    col = 0;
-                    row++;
-                }
-            }
-        }
-
-        return result;
     }
 }
