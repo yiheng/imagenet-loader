@@ -14,7 +14,7 @@ import java.net.URI;
 /**
  * Write image data into sequence file
  */
-public class Hadoop {
+public class Writer {
     public final String seqFilePath;
 
     private static Configuration conf = new Configuration();
@@ -24,13 +24,9 @@ public class Hadoop {
 
     private final SequenceFile.Writer writer;
 
-    private SequenceFile.Reader reader;
-
     private final ArrayWritable value = new ArrayWritable(DoubleWritable.class);
 
-    public Hadoop(String uri) throws IOException {
-
-        FileSystem fs = FileSystem.get(URI.create(uri),conf);
+    public Writer(String uri) throws IOException {
         Path path = new Path(uri);
         this.seqFilePath = uri;
         writer = SequenceFile.createWriter(conf,
@@ -42,11 +38,6 @@ public class Hadoop {
         path = null;
     }
 
-    public Hadoop() {
-        seqFilePath = null;
-        writer = null;
-    }
-
     public void write(String fileName, String label, BufferedImage img) throws Exception {
         try {
             value.set(convertTo2D(img));
@@ -54,22 +45,6 @@ public class Hadoop {
         } catch (Exception e) {
             e.printStackTrace();
             throw e;
-        }
-    }
-
-    public void verify(String uri) throws IOException {
-        Path path = new Path(uri);
-
-        FileSystem fs = FileSystem.get(URI.create(uri), conf);
-        reader = new SequenceFile.Reader(fs, path, conf);
-        Writable key = (Writable)
-                ReflectionUtils.newInstance(reader.getKeyClass(), conf);
-        Writable value = new ArrayWritable(DoubleWritable.class);
-        long position = reader.getPosition();
-        while (reader.next(key, value)) {
-            String syncSeen = reader.syncSeen() ? "*" : "";
-            System.out.printf("[%s%s]\t%s\t%s\n", position, syncSeen, key, value);
-            position = reader.getPosition(); // beginning of next record
         }
     }
 
