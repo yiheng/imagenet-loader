@@ -53,10 +53,10 @@ public class Image {
     public Image(Path path) {
         this.path = path;
         this.fileName = this.path.getFileName().toString();
-        String[] tokens = this.fileName.split("_");
-        requires(tokens.length == 2);
-        this.label = tokens[0];
-        requires(this.label.equals(this.path.getParent().getFileName().toString()));
+        //String[] tokens = this.fileName.split("_");
+        //requires(tokens.length == 2);
+        this.label = this.path.getParent().getFileName().toString();
+        //requires(this.label.equals(this.path.getParent().getFileName().toString()));
         String[] nameAndType = this.fileName.split("\\.");
         requires(nameAndType.length == 2);
         if (nameAndType[1].equals("JPEG")) {
@@ -64,7 +64,7 @@ public class Image {
         } else {
             throw new RuntimeException("Unsupported image type " + nameAndType[1]);
         }
-        this.key = nameAndType[0];
+        this.key = this.label + "_" + nameAndType[0];
     }
 
     public boolean load(double[] data) {

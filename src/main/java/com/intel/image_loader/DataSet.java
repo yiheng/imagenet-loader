@@ -11,12 +11,17 @@ import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Read imageNet data structure
  */
 public class DataSet {
     private ConcurrentLinkedQueue<Image> imageList = new ConcurrentLinkedQueue<Image>();
+
+    private int total = 0;
+
+    private AtomicInteger count = new AtomicInteger(0);
 
     public DataSet(String pathName) throws IOException {
         Path path = Paths.get(pathName);
@@ -28,12 +33,18 @@ public class DataSet {
             DirectoryStream<Path> subDirectoryStream = Files.newDirectoryStream(p);
             for(Path image : subDirectoryStream) {
                 imageList.add(new Image(image));
+                total++;
             }
         }
         System.out.println("Done");
     }
 
+    // ToDo: Use another thread to print current process
+    public void showProcess() {
+    }
+
     public Optional<Image> fetch() {
+        count.incrementAndGet();
         return Optional.ofNullable(imageList.poll());
     }
 }
