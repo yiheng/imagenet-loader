@@ -11,6 +11,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.ByteBuffer;
 
 import static com.intel.image_loader.Utils.*;
 
@@ -18,6 +19,7 @@ import static com.intel.image_loader.Utils.*;
  * Write image data into sequence file
  */
 public class Writer {
+
     public final String seqFilePath;
 
     private static Configuration conf = new Configuration();
@@ -27,9 +29,7 @@ public class Writer {
 
     private final SequenceFile.Writer writer;
 
-    private DoubleWritable[] buffer = null;
-
-    private final ArrayWritable value = new ArrayWritable(DoubleWritable.class);
+    public ByteBuffer preBuffer = ByteBuffer.allocate(4 * 2);
 
     public Writer(String uri) throws IOException {
         Path path = new Path(uri);
@@ -37,26 +37,19 @@ public class Writer {
         writer = SequenceFile.createWriter(conf,
                 SequenceFile.Writer.file(path),
                 SequenceFile.Writer.keyClass(Text.class),
-                SequenceFile.Writer.valueClass(ArrayWritable.class)
+                SequenceFile.Writer.valueClass(Text.class)
         );
     }
 
-    public void write(String fileName, double[] img) throws Exception {
-        if(buffer == null) {
-            buffer = new DoubleWritable[img.length];
-            for(int i = 0; i < img.length ; i++) {
-                buffer[i] = new DoubleWritable();
-            }
-            value.set(buffer);
-        }
-
-        requires(buffer.length == img.length);
-        for(int i = 0; i < img.length; i++) {
-            buffer[i].set(img[i]);
-        }
-
+    public void write(String fileName, byte[] img, int width, int height) throws Exception {
         try {
-            writer.append(new Text(fileName), value);
+            preBuffer.putInt(width);
+            preBuffer.putInt(height);
+            byte[] data = new byte[preBuffer.capacity() + img.length];
+            System.arraycopy(preBuffer.array(), 0, data, 0, preBuffer.capacity());
+            System.arraycopy(img, 0, data, preBuffer.capacity(), img.length);
+            preBuffer.clear();
+            writer.append(new Text(fileName), new Text(data));
         } catch (Exception e) {
             e.printStackTrace();
             throw e;

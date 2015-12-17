@@ -21,7 +21,6 @@ public class Worker {
 
     public int process(final String target) {
         Future<Integer>[] results = new Future[parallel];
-        final double[] data = Image.getBuffer();
 
         for(int i = 0; i < parallel; i++) {
             final int tid = i;
@@ -33,14 +32,13 @@ public class Worker {
                     int processed = 0;
                     while(imgOpt.isPresent()) {
                         Image img = imgOpt.get();
-                        if(img.load(data)) {
-                            try {
-                                writer.write(img.key, data);
-                                processed++;
-                            } catch (Exception e) {
+                        try {
+                            byte[] data = img.load();
+                            writer.write(img.key, data, img.getWidth(), img.getHeight());
+                            processed++;
+                        } catch (Exception e) {
                                 e.printStackTrace();
                                 System.err.println("Can't write img " + img.path + " to sequence file " + file);
-                            }
                         }
                         imgOpt = dataSet.fetch();
                     }

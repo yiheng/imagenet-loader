@@ -41,6 +41,19 @@ public class DataSet {
 
     // ToDo: Use another thread to print current process
     public void showProcess() {
+        Thread display = (new Thread(new Runnable() {
+            public void run() {
+                while(true) {
+                    System.out.println(count + "/" + total);
+                    try {
+                        Thread.sleep(5000);
+                    } catch (InterruptedException e) {
+                    }
+                }
+            }
+        }));
+        display.setDaemon(true);
+        display.start();
     }
 
     public Optional<Image> fetch() {

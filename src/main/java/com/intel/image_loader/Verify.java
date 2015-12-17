@@ -2,10 +2,7 @@ package com.intel.image_loader;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.ArrayWritable;
-import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.*;
 import org.apache.hadoop.util.ReflectionUtils;
 
 import java.io.IOException;
@@ -30,15 +27,11 @@ public class Verify {
         SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
         Writable key = (Writable)
                 ReflectionUtils.newInstance(reader.getKeyClass(), conf);
-        ArrayWritable value = new ArrayWritable(DoubleWritable.class);
+        Text value = new Text();
         long position = reader.getPosition();
         while (reader.next(key, value)) {
             String syncSeen = reader.syncSeen() ? "*" : "";
-            Writable[] array = value.get();
-            double[] data = new double[array.length];
-            for(int i = 0; i < array.length; i++) {
-                data[i] = ((DoubleWritable)array[i]).get();
-            }
+            byte[] data = value.getBytes();
             System.out.printf("[%s%s]\t%s\t Array with length(%s)\n", position, syncSeen, key, data.length);
             if(key.toString().equals(target)) {
                 System.out.println("Extact " + target + " to " + target + ".jpeg");

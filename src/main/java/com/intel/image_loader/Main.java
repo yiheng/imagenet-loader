@@ -15,6 +15,7 @@ public class Main {
 
         DataSet dataSet = new DataSet(base);
         Worker worker = new Worker(dataSet, parallel);
+        dataSet.showProcess();
         int processed = worker.process(output);
         System.out.println("Processed " + processed + " files");
     }
